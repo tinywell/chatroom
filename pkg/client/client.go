@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc"
 
@@ -37,7 +38,6 @@ func NewClient(name string, conn *grpc.ClientConn) *Client {
 
 // Start to chat
 func (c *Client) Start() error {
-
 	// go c.sendMsg(stream)
 	go c.recvMsg()
 	return nil
@@ -45,7 +45,11 @@ func (c *Client) Start() error {
 
 // SendMsg is used to send msg to chatroom server
 func (c *Client) SendMsg(msg string) {
-
+	cm := c.newChatMsg(msg)
+	err := c.stream.Send(cm)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 // GetRecvMsg return receive msg channel

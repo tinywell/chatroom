@@ -16,11 +16,12 @@ func main() {
 		return
 	}
 	c := client.NewClient("test", conn)
+	c.Start()
 	recv := c.GetRecvMsg()
 	go getMsg(recv)
 	for {
 		msg := ""
-		_, err := fmt.Scanf("%s\r", &msg)
+		_, err := fmt.Scanf("%s\n", &msg)
 		if err != nil {
 			fmt.Println(err)
 			continue
