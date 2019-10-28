@@ -3,10 +3,12 @@ syntax = "proto3";
 package proto;
 
 message Message {
+    string name = 1;
     oneof payload {
-        SignIn signin = 1;
-        ChatMsg chatmsg = 2;
+        SignIn signin = 2;
+        ChatMsg chatmsg = 3;
     }
+    
 }
 
 message SignIn {
@@ -14,6 +16,7 @@ message SignIn {
 }
 
 message ChatMsg {
-    string msg = 1;
+    string name = 1;
+    string msg = 2;
 }
 
