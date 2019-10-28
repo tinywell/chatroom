@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package proto;
+
+message Message {
+    oneof payload {
+        SignIn signin = 1;
+        ChatMsg chatmsg = 2;
+    }
+}
+
+message SignIn {
+    string name = 1;
+}
+
+message ChatMsg {
+    string msg = 1;
+}
+

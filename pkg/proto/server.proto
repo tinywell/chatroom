@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package proto;
+
+import "common.proto";
+
+service ChatRoom {
+    rpc Chat(stream Message) returns (stream Message) {}
+}
