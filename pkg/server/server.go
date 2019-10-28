@@ -27,22 +27,23 @@ func NewServer() *Server {
 }
 
 // Chat is implement for proto.ChatRoomServer
-func (s *Server) Chat(stream proto.ChatRoom_ChatServer) {
+func (s *Server) Chat(stream proto.ChatRoom_ChatServer) error {
 	for {
 		msg := &proto.Message{}
 		err := stream.RecvMsg(msg)
 		if err != nil {
-			return
+			fmt.Println(err)
+			return err
 		}
+		fmt.Println(msg)
 		switch msg.Payload.(type) {
 		case *proto.Message_Chatmsg:
-			fmt.Println(msg)
 			s.broadCast(msg)
 		case *proto.Message_Signin:
 			m := msg.Payload.(*proto.Message_Signin)
 			s.newClient(m.Signin.Name, stream)
 		default:
-			return
+			return nil
 		}
 	}
 }

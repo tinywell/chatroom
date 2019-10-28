@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"io"
 
 	"google.golang.org/grpc"
 
@@ -11,67 +10,62 @@ import (
 
 // Client chat client
 type Client struct {
-	name   string
-	reader io.Reader
-	writer io.Writer
-	chatC  proto.ChatRoomClient
+	name string
+	// chatC  proto.ChatRoomClient
+	stream proto.ChatRoom_ChatClient
+	recvC  chan *proto.Message
 }
 
 // NewClient return a new Client
-func NewClient(name string, conn *grpc.ClientConn, reader io.Reader, writer io.Writer) *Client {
-	chatC := proto.NewChatRoomClient(conn)
-	return &Client{
-		name:   name,
-		reader: reader,
-		writer: writer,
-		chatC:  chatC,
+func NewClient(name string, conn *grpc.ClientConn) *Client {
+	c := &Client{
+		name:  name,
+		recvC: make(chan *proto.Message),
 	}
+
+	chatC := proto.NewChatRoomClient(conn)
+	ctx := context.Background()
+	msg := c.newSignMsg()
+	stream, err := chatC.Chat(ctx)
+	if err != nil {
+		return nil
+	}
+	stream.Send(msg)
+	c.stream = stream
+	return c
 }
 
 // Start to chat
 func (c *Client) Start() error {
-	ctx := context.Background()
-	msg := c.newSignMsg()
-	stream, err := c.chatC.Chat(ctx)
-	if err != nil {
-		return err
-	}
-	stream.Send(msg)
-	go c.sendMsg(stream)
-	go c.recvMsg(stream)
+
+	// go c.sendMsg(stream)
+	go c.recvMsg()
 	return nil
 }
 
-func (c *Client) sendMsg(stream proto.ChatRoom_ChatClient) {
-	for {
-		p := []byte{}
-		_, err := c.reader.Read(p)
-		if err != nil {
-			return
-		}
-		msg := c.newChatMsg(string(p))
-		err = stream.Send(msg)
-		if err != nil {
-			return
-		}
-	}
+// SendMsg is used to send msg to chatroom server
+func (c *Client) SendMsg(msg string) {
+
 }
 
-func (c *Client) recvMsg(stream proto.ChatRoom_ChatClient) {
+// GetRecvMsg return receive msg channel
+func (c *Client) GetRecvMsg() <-chan *proto.Message {
+	return c.recvC
+}
+
+func (c *Client) recvMsg() {
 	for {
-		msg, err := stream.Recv()
+		msg, err := c.stream.Recv()
 		if err != nil {
 			return
 		}
-		switch msg.Payload.(type) {
-		case *proto.Message_Signin:
-		case *proto.Message_Chatmsg:
-			cmsg := msg.Payload.(*proto.Message_Chatmsg)
-			_, err := c.writer.Write([]byte(cmsg.Chatmsg.Msg))
-			if err != nil {
-				return
-			}
-		}
+		c.recvC <- msg
+		// switch msg.Payload.(type) {
+		// case *proto.Message_Signin:
+		// case *proto.Message_Chatmsg:
+		// 	cmsg := msg.Payload.(*proto.Message_Chatmsg)
+		// 	c.recvC <- cmsg.Chatmsg
+		// }
 	}
 }
 
@@ -80,14 +74,13 @@ func (c *Client) stop() {
 }
 
 func (c *Client) newChatMsg(msg string) *proto.Message {
-	cmsg := &proto.Message_Chatmsg{}
+	cmsg := &proto.Message_Chatmsg{Chatmsg: &proto.ChatMsg{}}
 	cmsg.Chatmsg.Name = c.name
 	cmsg.Chatmsg.Msg = msg
 	return &proto.Message{Name: c.name, Payload: cmsg}
 }
 
 func (c *Client) newSignMsg() *proto.Message {
-	smsg := &proto.Message_Signin{}
-	smsg.Signin.Name = c.name
+	smsg := &proto.Message_Signin{Signin: &proto.SignIn{Name: c.name}}
 	return &proto.Message{Name: c.name, Payload: smsg}
 }
