@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/tinywell/chatroom/pkg/proto"
@@ -35,6 +36,7 @@ func (s *Server) Chat(stream proto.ChatRoom_ChatServer) {
 		}
 		switch msg.Payload.(type) {
 		case *proto.Message_Chatmsg:
+			fmt.Println(msg)
 			s.broadCast(msg)
 		case *proto.Message_Signin:
 			m := msg.Payload.(*proto.Message_Signin)
