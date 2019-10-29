@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
-
-	"github.com/tinywell/chatroom/pkg/proto"
+	"os"
 
 	"github.com/tinywell/chatroom/pkg/client"
+	"github.com/tinywell/chatroom/pkg/proto"
+
 	"google.golang.org/grpc"
 )
 
@@ -19,14 +21,22 @@ func main() {
 	c.Start()
 	recv := c.GetRecvMsg()
 	go getMsg(recv)
+	f := bufio.NewReader(os.Stdin)
 	for {
-		msg := ""
-		_, err := fmt.Scanf("%s\n", &msg)
+		input, err := f.ReadString('\n')
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
-		c.SendMsg(msg)
+		if len(input) == 1 { // empty line
+			continue
+		}
+		cmd := ""
+		fmt.Sscan(input, &cmd)
+		if cmd == "quit" {
+			break
+		}
+		c.SendMsg(input)
 	}
 }
 
