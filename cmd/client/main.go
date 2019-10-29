@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"os"
 
@@ -12,12 +13,18 @@ import (
 )
 
 func main() {
-	conn, err := grpc.Dial("localhost:8888", grpc.WithInsecure())
+	var serverAddr string
+	var name string
+	flag.StringVar(&serverAddr, "server", "localhost:8888", "server address")
+	flag.StringVar(&name, "user", "test", "user name")
+	flag.Parse()
+
+	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	c := client.NewClient("test", conn)
+	c := client.NewClient(name, conn)
 	c.Start()
 	recv := c.GetRecvMsg()
 	go getMsg(recv)

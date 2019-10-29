@@ -61,6 +61,7 @@ func (c *Client) recvMsg() {
 	for {
 		msg, err := c.stream.Recv()
 		if err != nil {
+			close(c.recvC)
 			return
 		}
 		c.recvC <- msg
