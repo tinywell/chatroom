@@ -3,25 +3,27 @@ package ui
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/jroimartin/gocui"
 )
 
 type UI struct {
 	ui     *gocui.Gui
+	Name   string
 	viewO  *gocui.View
 	viewI  *gocui.View
 	inputC chan string
 }
 
-func NewUI() (*UI, error) {
+func NewUI(name string) (*UI, error) {
 	ui := &UI{
+		Name:   name,
 		inputC: make(chan string),
 	}
 	err := ui.init()
 	if err != nil {
 		return nil, err
-
 	}
 	return ui, nil
 }
@@ -49,13 +51,14 @@ func (ui *UI) init() error {
 	viewO.Frame = true
 	viewO.Title = "CHAT ROOM"
 	ui.viewO = viewO
+
 	viewI, err := cui.SetView("input", viewIX0, viewIY0, viewIX1, viewIY1)
 	if err != gocui.ErrUnknownView {
 		return err
 	}
 	viewI.Editable = true
 	viewI.Frame = true
-	viewI.Title = "INPUT"
+	viewI.Title = fmt.Sprintf("INPUT(%s)", ui.Name)
 	viewI.SetCursor(0, 0)
 	viewI.Highlight = true
 	// ui.viewI, err = cui.SetViewOnBottom("input")
@@ -94,7 +97,12 @@ func (ui *UI) CLose() {
 
 func (ui *UI) ApppendMsg(msg, name string) {
 	m := fmt.Sprintf("\033[34m%s:\033[0m\n%s\n", name, msg)
-	ui.viewO.Write([]byte(m))
+	_, err := fmt.Fprintln(ui.viewO, strings.TrimRight(m, "\n"))
+	// _, err := ui.viewO.Write([]byte(m))
+	if err != nil {
+		ui.viewO.Write([]byte("error"))
+	}
+
 }
 
 func (ui *UI) input(g *gocui.Gui, v *gocui.View) error {
